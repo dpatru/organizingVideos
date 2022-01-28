@@ -1,0 +1,78 @@
+* Renaming Files
+
+** Remove spaces
+
+
+#+BEGIN_SRC bash
+
+# Remove all the spaces from the directories
+find . -type d | rename -n 's/ /_/g'
+
+# Remove all the spaces from the files
+find . -type f | rename -n 's/ /_/g'
+
+# Find all files without a timestamp
+find . -iname *.mp4 | perl -lne 'print unless /\d{6}\D[^/]*$/' 
+
+# Prefix timestamps to all the video files
+find . -iname *.mp4 | perl -lne 'print unless /\d{6}\D[^\/]*$/' | rename -n 'my $t = `date -r "$_" +%Y%m%d`; chomp $t; s|(?=[^/]+.mp4$)|$t-|i'qq
+
+#+END_SRC
+
+
+** Move files
+
+#+BEGIN_SRC bash
+
+# Move files to Videos directory if destination directories exist
+find . -iname *.mp4 | perl -nle 'print unless /Videos/' | rename -n 's/Downloads/Videos/'
+
+# Move files, creating directories as needed
+rsync -avh --remove-source-files --prune-empty-dirs -n --include='*/' --include='*.mp4' Desktop/ Videos/
+rsync -avh --remove-source-files --prune-empty-dirs -n --include='*/' --include='*.mp4' --include='*.MP4' --include='*.MOV' --include='*.mov' --exclude='*' --verbose --verbose Desktop/ Videos/
+
+# if on an NTFS, don't use -a which tries to set ownership and groups, concepts foreign to ntfs. See https://unix.stackexchange.com/questions/558235/rsync-operation-not-permitted
+rsync -rtDvh --remove-source-files --prune-empty-dirs  --include='*/' --include='*.mp4' --include='*.MP4' --include='*.MOV' --include='*.mov' --exclude='*' --progress --verbose --verbose Desktop/ Videos/
+
+# less dangerous
+rsync -rvh --prune-empty-dirs  --include='*/' --include='*.mp4' --include='*.MP4' --include='*.MOV' --include='*.mov' --exclude='*' --progress --verbose --verbose Desktop/ Videos/
+
+
+#+END_SRC
+
+** Setting up rsyncd between two backup disks
+
+#+BEGIN_SRC bash
+
+# NTFS does not do modication times, ownership, etc. Use --size-only to compare. See https://serverfault.com/questions/151986/rsync-command-to-synchronize-two-ntfs-drives
+rsync -rvh --progress --size-only /mnt/Seagate_Backup_Backup/Videos/ .
+
+#+END_SRC
+
+** Transferring files from mac to backup disk on network
+
+** Transferring files from iphone to backup disk
+
+
+** Transferring files from other storage to backup disk
+
+
+** interactive
+#+BEGIN_SRC bash
+
+find . -iname \*.mp4 -regextype posix-extended \
+-regex '.*([[:digit:]]{8})-[[:digit:]].*' \
+-exec echo \; \
+-print -exec bash -c 'read -p "File is $1. Continue? [Yn] " a && [[ ! $a || $a == [Yy] || $a == [yY][eE][sS] ]] && echo continuing with $1 && exit 0 || echo skipping $1 && exit 1' bash {} \; \
+-exec vlc --x11-display :0 {} \; \
+-exec echo "continuing" \; \
+-exec perl -e '
+         my ($old,) = @ARGV;
+         print "Enter new name for $old: "; my $name = <STDIN>; chomp $name; $name =~ s/ /_/g;
+         if ($name eq "") { print "skipping $old\n"; exit(1);}
+         (my $new = $old) =~ s|(\d{8})-([^/\.]+).([^/]+)$|$1-$name.$3|;
+         print "renaming $old to $new\n";' \
+         {} \;
+
+
+#+END_SRC
