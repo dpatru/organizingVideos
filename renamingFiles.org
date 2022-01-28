@@ -75,4 +75,17 @@ find . -iname \*.mp4 -regextype posix-extended \
          {} \;
 
 
+find . -iname \*.mp4 -regextype posix-extended \
+-regex '.*([[:digit:]]{8})-[[:digit:]]{2}.*' \
+! -regex '.+-20[12][[:digit:]].+' \
+-exec echo \; -print \
+-exec bash -c 'read -p "File is $1. Continue? [Yn] " a && [[ ! $a || $a == [Yy] || $a == [yY][eE][sS] ]] && echo continuing with $1 && exit 0 || echo skipping $1 && exit 1' bash {} \; \
+-exec vlc --x11-display :0 {} \; \
+-exec echo "continuing" \; \
+-exec perl -e 'my ($old,) = @ARGV;
+         print "Enter new name for $old: "; my $name = <STDIN>; chomp $name; $name =~ s/ /_/g;
+         if ($name eq "") { print "skipping $old\n"; exit(1);}
+         (my $new = $old) =~ s|(\d{8})-([^/\.]+).([^/]+)$|$1-$name.$3|;
+         print "Renaming $old to $new\n"; rename($old, $new);' {} \;
+
 #+END_SRC

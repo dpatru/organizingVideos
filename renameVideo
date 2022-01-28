@@ -1,0 +1,21 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+my ($old,) = @ARGV;
+die "$0: Fatal error: File $old does not exist." unless -e $old;
+my $new=""; my $name_taken=0;
+do {
+    if ($name_taken) {
+	print "$new already exists. Enter a new name for $old: ";
+    } else {
+	print "Enter new name for $old: ";
+    }
+    my $name = <STDIN>; chomp $name; $name =~ s/ /_/g;
+    if ($name eq "") { print "skipping $old\n"; exit(1);}
+    print "name is $name\n";
+    ($new = $old) =~ s|(\d{8})-([^/\.]+)([^/]*)$|$1-$name$3|;
+} while ($name_taken = -e $new);
+print "Renaming $old to $new\n"; 
+rename($old, $new);
