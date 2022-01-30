@@ -103,4 +103,6 @@ find . -iname \*.mp4 \
 
 find . -iname \*.mp4 -regextype posix-extended -regex '.*My_project.*$' -exec echo \; -exec bash -c 'read -p "Continue with $1? [Yn] " c && [[ ! $c || $c == [Yy] ]] && exit 0 || echo skipping $1 && exit 1' bash {} \; -exec vlc {} \; -exec renameVideo {} \;
 
+find . -iname '*My_project*.MP4' -exec echo \; -exec promptToContinue {} \; -exec bash -c 'vlc $1 2> /dev/null' bash-shell {} \; -exec renameVideo {} \;
+
 #+END_SRC
